@@ -1,45 +1,51 @@
 # HUB3 Lab — Site (Next.js + Sanity)
 
 ## Original Problem Statement
-Analisar o repositório https://github.com/hub3pixellab/Site e corrigir o que falta para fazer deploy no Vercel.
-Usuário escolheu: clonar e configurar no melhor ambiente possível com **Vercel + Sanity**.
+Analisar o repositório `hub3pixellab/Site` e corrigir o que falta para deploy no Vercel + Sanity.
+**Iteração 2:** Criar página `/equipe` (Diogo Zachi + Bruno Xavier), remover seção de fundadores do Matchmaker (holding), substituir o jogo da home por match-3 estilo Candy Crush, aplicar paleta do logo (navy + cyan + laranja), incluir o logo na home.
 
 ## Architecture
 - **Framework:** Next.js 15.5.16 (App Router)
 - **CMS:** Sanity v3 (Studio embarcado em `/studio`)
 - **Runtime:** Edge (API routes)
 - **Deploy target:** Vercel
-- **Localização do código clonado:** `/app/site`
+- **Code location:** `/app/site`
 
-## What's been implemented (29 Jun 2025)
-- ✅ Adicionado `.gitignore` (Next.js + Vercel + Sanity)
-- ✅ Adicionado `.env.example` com todas as vars do Sanity
-- ✅ Adicionado `vercel.json` (preset Next.js, região `gru1`)
-- ✅ Adicionado `README.md` com passo-a-passo de deploy
-- ✅ Refatorado `next.config.js`:
-  - Removido `output: 'standalone'` (não recomendado no Vercel)
-  - Removido `serverExternalPackages: ['mongodb']` (mongo não é usado)
-  - Removido `webpack.watchOptions` dev-only (não impacta Vercel)
-  - Adicionado `cdn.sanity.io` em `remotePatterns` para `next/image`
-- ✅ Build de produção validado: `yarn build` → ✓
-- ✅ Smoke test: `GET /api/arcade/leaderboard` → 200 OK
+## What's been implemented
 
-## Environment Variables (set in Vercel)
-- `NEXT_PUBLIC_SANITY_PROJECT_ID` (obrigatória)
-- `NEXT_PUBLIC_SANITY_DATASET` (obrigatória — `production`)
-- `NEXT_PUBLIC_SANITY_API_VERSION` (obrigatória — `2024-01-01`)
-- `SANITY_WRITE_TOKEN` (obrigatória para `POST /api/arcade/lead`)
+### Iter. 1 — Deploy readiness (29 Jun 2025)
+- ✅ `.gitignore`, `.env.example`, `vercel.json`, `README.md`
+- ✅ `next.config.js` saneado para Vercel
+- ✅ Build de produção validado
+
+### Iter. 2 — Identidade + Equipe + Novo jogo (29 Jun 2025)
+- ✅ **Paleta do logo** aplicada: navy `#06121F`, cyan `#22E0F5`, laranja `#FF9416` (tailwind + globals.css)
+- ✅ **Logo** adicionado: `/public/logo-hub3.jpg` (renderizado na home + miniatura no nav)
+- ✅ **Jogo match-3 PixelMatch** (`components/games/PixelMatch.js`): 6x6, swap por clique adjacente, cascata, 6 ícones tech, score 240 desbloqueia o hub. Substitui o `TerminalNode` na home.
+- ✅ **Página `/equipe`** com cards dos 2 fundadores (Diogo Zachi + Bruno Xavier), quotes, bios completas, tags coloridas por accent.
+- ✅ **Holding limpa**: removida seção de fundadores; link "Conheça os fundadores" → `/equipe`.
+- ✅ **Nav atualizado**: logo + link "Equipe" entre Home e Holding.
+- ✅ **i18n**: novos strings pt/en (`equipe.*`, `home.team`, `home.boot/instruction` atualizados).
+- ✅ Build prod ✓ — 9 rotas geradas, incl. `/equipe`.
+- ✅ Smoke tests: `/`, `/equipe`, `/holding` → 200.
+- ✅ Visual validado por screenshot.
+
+## Environment Variables (Vercel)
+- `NEXT_PUBLIC_SANITY_PROJECT_ID` · `NEXT_PUBLIC_SANITY_DATASET=production`
+- `NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01` · `SANITY_WRITE_TOKEN`
 - `CORS_ORIGINS` (opcional)
 
 ## Next Action Items (usuário)
-1. Push das alterações para `hub3pixellab/Site` (5 arquivos novos + `next.config.js` editado)
-2. Em <https://www.sanity.io/manage>: criar projeto e gerar token (Editor)
-3. Em <https://vercel.com/new>: importar o repo, setar as env vars listadas acima, Deploy
-4. Adicionar a URL `https://<seu-dominio>.vercel.app` em **Sanity → API → CORS Origins**
-5. (Opcional) Rodar `node scripts/seed-sanity.mjs` para popular dataset
+1. **Save to GitHub** para enviar 8 arquivos modificados + 7 novos
+2. Adicionar fotos reais dos fundadores em `/public/team/diogo.jpg` e `/public/team/bruno.jpg` e setar `avatar` em `lib/content.js`
+3. Deploy no Vercel (instruções no README.md)
 
-## Backlog (futuro)
-- Resolver mismatch de peer-deps (`next-sanity@10` ↔ `sanity@3`) — funciona, mas pode subir para `sanity@^4`
-- Remover dep `mongodb` do `package.json` (não usada) para reduzir tempo de install
-- Otimizar bundle do `/studio` (1.55 MB) — code-splitting ou lazy mount
-- CI: GitHub Action de `next build` em pull requests
+## Backlog
+- Foto real dos fundadores
+- Adicionar mais membros do time (já tem estrutura pronta em `team`)
+- Hover/tilt 3D nos cards de equipe
+- Sound effects no PixelMatch (já existe AudioEngine)
+- Botão "Share score" no fim do jogo match-3
+- Resolver peer-deps `next-sanity@10 ↔ sanity@3`
+- Remover dep `mongodb` (não usada)
+- Otimizar bundle do `/studio` (1.55 MB)
