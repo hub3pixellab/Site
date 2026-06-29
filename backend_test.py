@@ -8,7 +8,7 @@ import json
 import sys
 
 # Base URL from .env
-BASE_URL = "https://hub3-terminal-nexus.preview.emergentagent.com"
+BASE_URL = "https://hub3-deploy.preview.emergentagent.com"
 
 def print_test_header(test_name):
     print(f"\n{'='*80}")
