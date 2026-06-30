@@ -2,27 +2,54 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Zap, Plug, HardDrive, Cpu, Wifi, RotateCcw, Trophy, ChevronRight, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { Zap, Plug, HardDrive, Cpu, Wifi, RotateCcw, Trophy, ChevronRight, Send, Loader2, CheckCircle2, Lock } from 'lucide-react';
 import { useArcadeData } from '@/hooks/useArcadeData';
+import { useRegistration } from '@/components/layout/RegistrationProvider';
 
 /**
  * PixelMatch — match-3 estilo Candy Crush com 25 níveis progressivos.
- * - Level 1: 240 pts em 18 movimentos → libera os menus do site
- * - Level 25: máximo (alvo cresce ~80/nível, moves crescem ~1.5/nível)
- * - Logo HUB3 é uma das 7 peças
- * - Captação de leads + leaderboard top 10 ao final de cada nível
+ * Cada nível: score reseta, alvo cresce conforme tabela, moves crescem proporcional.
+ * Captação de lead OBRIGATÓRIA no fim do Nível 1 (= cadastro na plataforma).
+ * Após cadastro, jogadores têm acesso livre.
  */
 
 const SIZE = 6;
-const COLORS = 7; // 6 ícones tech + 1 logo HUB3
+const COLORS = 7;
 const UNLOCK_LEVEL = 1;
 const TOTAL_LEVELS = 25;
 
-// progressão suave: alvo base 240, +80 por nível; movimentos base 18, +1.5/nível
+// Tabela de alvos e moves por nível (matematicamente jogável)
+const LEVELS = [
+  { target: 320,   moves: 20 },
+  { target: 640,   moves: 25 },
+  { target: 1280,  moves: 32 },
+  { target: 2520,  moves: 42 },
+  { target: 3800,  moves: 50 },
+  { target: 5300,  moves: 58 },
+  { target: 6900,  moves: 65 },
+  { target: 8700,  moves: 72 },
+  { target: 10700, moves: 78 },
+  { target: 12900, moves: 84 },
+  { target: 15300, moves: 90 },
+  { target: 17900, moves: 96 },
+  { target: 20700, moves: 102 },
+  { target: 23700, moves: 108 },
+  { target: 26900, moves: 114 },
+  { target: 30300, moves: 120 },
+  { target: 33900, moves: 126 },
+  { target: 37700, moves: 132 },
+  { target: 41700, moves: 138 },
+  { target: 45900, moves: 144 },
+  { target: 50300, moves: 150 },
+  { target: 54900, moves: 156 },
+  { target: 59700, moves: 162 },
+  { target: 64700, moves: 168 },
+  { target: 70000, moves: 175 },
+];
+
 function levelConfig(level) {
-  const target = 240 + (level - 1) * 80;          // 240, 320, 400, ... 2160
-  const moves  = Math.round(18 + (level - 1) * 1.5); // 18, 20, 21, ... 54
-  return { level, target, moves };
+  const cfg = LEVELS[Math.min(level - 1, LEVELS.length - 1)] || LEVELS[0];
+  return { level, target: cfg.target, moves: cfg.moves };
 }
 
 const TYPES = [
@@ -94,38 +121,37 @@ export default function PixelMatch({ onUnlock }) {
   const [board, setBoard] = useState(() => freshBoard());
   const [score, setScore] = useState(0);
   const [moves, setMoves] = useState(levelConfig(1).moves);
+  const [totalScore, setTotalScore] = useState(0);
   const [selected, setSelected] = useState(null);
   const [removing, setRemoving] = useState(new Set());
   const [combo, setCombo] = useState(0);
   const [shake, setShake] = useState(false);
-  const [phase, setPhase] = useState('playing'); // playing | won | lost
+  const [phase, setPhase] = useState('playing');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const unlockFiredRef = useRef(false);
   const busyRef = useRef(false);
 
   const cfg = levelConfig(level);
 
-  const { submitLead, loading: submitting, leaderboard, leaderboardLoading } = useArcadeData();
+  const { leaderboard, leaderboardLoading } = useArcadeData();
+  const { isRegistered, registration, registerLead } = useRegistration();
   const [leadForm, setLeadForm] = useState({ nickname: '', email: '', phone: '' });
-  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [leadError, setLeadError] = useState('');
 
-  // libera menus ao fim do nível 1
+  // libera menus ao fim do Nível 1
   useEffect(() => {
-    if (level >= UNLOCK_LEVEL && score >= levelConfig(UNLOCK_LEVEL).target && !unlockFiredRef.current) {
+    if (level >= UNLOCK_LEVEL && phase === 'won' && !unlockFiredRef.current) {
       unlockFiredRef.current = true;
       onUnlock && onUnlock();
     }
-  }, [level, score, onUnlock]);
+  }, [level, phase, onUnlock]);
 
-  // detecta win/lost por nível
+  // detecta win/lost
   useEffect(() => {
     if (phase !== 'playing') return;
-    if (score >= cfg.target) {
-      setPhase('won');
-    } else if (moves <= 0) {
-      setPhase('lost');
-    }
+    if (score >= cfg.target) setPhase('won');
+    else if (moves <= 0) setPhase('lost');
   }, [score, moves, cfg.target, phase]);
 
   const resolveCascades = useCallback(async (initialBoard) => {
@@ -200,7 +226,8 @@ export default function PixelMatch({ onUnlock }) {
     const nl = level + 1;
     setLevel(nl);
     setBoard(freshBoard());
-    // mantém score como acumulado
+    setTotalScore((t) => t + score);  // acumula no total geral
+    setScore(0);                      // reseta para o nível
     setMoves(levelConfig(nl).moves);
     setSelected(null);
     setRemoving(new Set());
@@ -213,12 +240,12 @@ export default function PixelMatch({ onUnlock }) {
     setLevel(1);
     setBoard(freshBoard());
     setScore(0);
+    setTotalScore(0);
     setMoves(levelConfig(1).moves);
     setSelected(null);
     setRemoving(new Set());
     setCombo(0);
     setPhase('playing');
-    setLeadSubmitted(false);
     setLeadError('');
     unlockFiredRef.current = false;
     busyRef.current = false;
@@ -230,13 +257,37 @@ export default function PixelMatch({ onUnlock }) {
     if (!leadForm.nickname.trim()) { setLeadError('Nickname é obrigatório.'); return; }
     if (!leadForm.email.trim())    { setLeadError('Email é obrigatório.'); return; }
     if (!leadForm.phone.trim())    { setLeadError('Telefone é obrigatório.'); return; }
+    setSubmitting(true);
     try {
-      await submitLead({ ...leadForm, score });
-      setLeadSubmitted(true);
+      await registerLead({ ...leadForm, score: totalScore + score, game: 'pixelmatch' });
     } catch (err) {
       setLeadError(err?.message || 'Falha ao enviar. Tente novamente.');
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  // Para usuário já cadastrado, ainda registra o score (sem precisar de form)
+  const submitScoreOnly = async () => {
+    if (!registration) return;
+    setSubmitting(true);
+    try {
+      await registerLead({
+        nickname: registration.nickname,
+        email:    registration.email,
+        phone:    registration.phone,
+        score:    totalScore + score,
+        game:     'pixelmatch',
+      });
+    } catch (err) {
+      setLeadError(err?.message || 'Falha ao registrar score');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Trava obrigatória: Nível 1 vencido + não registrado = força form sem skip
+  const mustRegister = phase === 'won' && level === UNLOCK_LEVEL && !isRegistered;
 
   return (
     <div className="w-full max-w-3xl mx-auto" data-testid="pixelmatch-root">
@@ -318,7 +369,10 @@ export default function PixelMatch({ onUnlock }) {
       {/* Controls */}
       <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="font-mono text-[10px] md:text-[11px] text-foreground/55 tracking-widest">
-          NÍVEL {level}: ATINJA <span className="text-cyanElectric">{cfg.target}</span> EM ATÉ <span className="text-hubOrange">{cfg.moves}</span> MOVES
+          NÍVEL {level}: <span className="text-cyanElectric">{cfg.target}</span> pts em até <span className="text-hubOrange">{cfg.moves}</span> moves
+          {isRegistered && registration && (
+            <span className="ml-2 text-acidGreen">· OLÁ, {registration.nickname.toUpperCase()}</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -345,13 +399,13 @@ export default function PixelMatch({ onUnlock }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bgDark/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bgDark/85 backdrop-blur-sm"
             data-testid="level-result-modal"
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="glass rounded-2xl p-5 md:p-7 max-w-md w-full border"
+              className="glass rounded-2xl p-5 md:p-7 max-w-md w-full border max-h-[90vh] overflow-y-auto"
               style={{ borderColor: phase === 'won' ? '#22E0F5' : '#FF9416' }}
             >
               <div className="text-center mb-4">
@@ -360,7 +414,9 @@ export default function PixelMatch({ onUnlock }) {
                        background: phase === 'won' ? 'rgba(34,224,245,0.12)' : 'rgba(255,148,22,0.12)',
                        color: phase === 'won' ? '#22E0F5' : '#FF9416',
                      }}>
-                  {phase === 'won' ? <><Trophy className="w-3 h-3" /> NÍVEL {level} COMPLETO</> : 'MOVES ESGOTADOS'}
+                  {phase === 'won'
+                    ? <><Trophy className="w-3 h-3" /> NÍVEL {level} COMPLETO</>
+                    : <><Lock className="w-3 h-3" /> MOVES ESGOTADOS</>}
                 </div>
                 <h3 className="font-display text-2xl md:text-3xl mt-3 gradient-text">
                   {phase === 'won'
@@ -368,7 +424,10 @@ export default function PixelMatch({ onUnlock }) {
                     : 'Tente novamente'}
                 </h3>
                 <div className="mt-2 font-mono text-xs text-foreground/70">
-                  Score atual: <span className="text-cyanElectric font-bold">{score}</span>
+                  Score do nível: <span className="text-cyanElectric font-bold">{score}</span>
+                  {totalScore > 0 && (
+                    <span className="ml-2">· Total: <span className="text-hubOrange font-bold">{totalScore + score}</span></span>
+                  )}
                 </div>
                 {level === UNLOCK_LEVEL && phase === 'won' && (
                   <div className="mt-3 inline-flex items-center gap-1.5 text-acidGreen font-mono text-[10px] tracking-widest">
@@ -377,30 +436,38 @@ export default function PixelMatch({ onUnlock }) {
                 )}
               </div>
 
-              {/* Lead capture form */}
-              {!leadSubmitted ? (
+              {/* Lead form: OBRIGATÓRIO se ainda não registrado */}
+              {!isRegistered ? (
                 <form onSubmit={handleLeadSubmit} className="space-y-2" data-testid="lead-form">
-                  <div className="font-mono text-[10px] tracking-widest text-foreground/60 mb-2 text-center">
-                    REGISTRE SEU SCORE NO LEADERBOARD
+                  <div className="rounded-md border border-hubOrange/40 bg-hubOrange/5 p-3 mb-3 text-center">
+                    <div className="font-mono text-[10px] tracking-widest text-hubOrange mb-1 inline-flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" /> CADASTRO OBRIGATÓRIO
+                    </div>
+                    <div className="text-[11px] text-foreground/75 leading-relaxed">
+                      Faça seu cadastro grátis para entrar no leaderboard e ter <span className="text-acidGreen font-bold">acesso livre</span> a todos os jogos do HUB3.
+                    </div>
                   </div>
                   <NeonInput
-                    placeholder="NICKNAME"
+                    placeholder="NICKNAME *"
                     value={leadForm.nickname}
                     onChange={(v) => setLeadForm((f) => ({ ...f, nickname: v }))}
                     testId="lead-nickname"
+                    required
                   />
                   <NeonInput
-                    placeholder="EMAIL"
+                    placeholder="EMAIL *"
                     type="email"
                     value={leadForm.email}
                     onChange={(v) => setLeadForm((f) => ({ ...f, email: v }))}
                     testId="lead-email"
+                    required
                   />
                   <NeonInput
-                    placeholder="WHATSAPP (+55...)"
+                    placeholder="WHATSAPP (+55...) *"
                     value={leadForm.phone}
                     onChange={(v) => setLeadForm((f) => ({ ...f, phone: v }))}
                     testId="lead-phone"
+                    required
                   />
                   {leadError && <div className="text-magentaSunset text-[11px] font-mono text-center">{leadError}</div>}
                   <button
@@ -409,48 +476,61 @@ export default function PixelMatch({ onUnlock }) {
                     data-testid="lead-submit"
                     className="w-full inline-flex items-center justify-center gap-2 mt-2 px-4 py-2.5 rounded-md bg-cyanElectric text-bgDark font-mono text-xs tracking-widest hover:shadow-neon-cyan disabled:opacity-50"
                   >
-                    {submitting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> ENVIANDO</> : <><Send className="w-3.5 h-3.5" /> SUBMETER SCORE</>}
+                    {submitting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> ENVIANDO</> : <><Send className="w-3.5 h-3.5" /> CADASTRAR E CONTINUAR</>}
                   </button>
                 </form>
               ) : (
-                <div className="text-center py-3" data-testid="lead-success">
-                  <CheckCircle2 className="w-8 h-8 text-cyanElectric mx-auto" />
-                  <div className="mt-2 font-mono text-xs text-cyanElectric tracking-widest">SCORE REGISTRADO</div>
+                <div className="text-center py-2" data-testid="lead-already">
+                  <CheckCircle2 className="w-7 h-7 text-acidGreen mx-auto" />
+                  <div className="mt-1 font-mono text-xs text-acidGreen tracking-widest">
+                    REGISTRADO COMO {registration?.nickname?.toUpperCase()}
+                  </div>
+                  <button
+                    onClick={submitScoreOnly}
+                    disabled={submitting}
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-md border border-cyanElectric/40 text-cyanElectric font-mono text-[10px] hover:bg-cyanElectric/10 disabled:opacity-50"
+                    data-testid="log-score-btn"
+                  >
+                    {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                    Registrar score atual
+                  </button>
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
-                {phase === 'won' && level < TOTAL_LEVELS && (
+              {/* Ações: só liberam se já registrado OU se for derrota (sem ganho a registrar) */}
+              {!mustRegister && (
+                <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+                  {phase === 'won' && level < TOTAL_LEVELS && (
+                    <button
+                      onClick={nextLevel}
+                      data-testid="next-level-btn"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-hubOrange text-bgDark font-mono text-xs hover:shadow-neon-orange"
+                    >
+                      Próximo nível <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {phase === 'lost' && (
+                    <button
+                      onClick={restartLevel}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-cyanElectric text-bgDark font-mono text-xs hover:shadow-neon-cyan"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Refazer nível
+                    </button>
+                  )}
                   <button
-                    onClick={nextLevel}
-                    data-testid="next-level-btn"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-hubOrange text-bgDark font-mono text-xs hover:shadow-neon-orange"
+                    onClick={() => setShowLeaderboard(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-hubOrange/40 text-hubOrange font-mono text-xs hover:bg-hubOrange/10"
                   >
-                    Próximo nível <ChevronRight className="w-3.5 h-3.5" />
+                    <Trophy className="w-3.5 h-3.5" /> Ver records
                   </button>
-                )}
-                {phase === 'lost' && (
                   <button
-                    onClick={restartLevel}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-cyanElectric text-bgDark font-mono text-xs hover:shadow-neon-cyan"
+                    onClick={resetAll}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border text-foreground/70 font-mono text-xs hover:text-cyanElectric"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" /> Refazer nível
+                    <RotateCcw className="w-3.5 h-3.5" /> Recomeçar
                   </button>
-                )}
-                <button
-                  onClick={() => setShowLeaderboard(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-hubOrange/40 text-hubOrange font-mono text-xs hover:bg-hubOrange/10"
-                >
-                  <Trophy className="w-3.5 h-3.5" /> Ver records
-                </button>
-                <button
-                  onClick={resetAll}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border text-foreground/70 font-mono text-xs hover:text-cyanElectric"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" /> Recomeçar
-                </button>
-              </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -471,7 +551,7 @@ export default function PixelMatch({ onUnlock }) {
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass rounded-2xl p-5 md:p-7 max-w-md w-full border border-hubOrange/40 shadow-neon-orange"
+              className="glass rounded-2xl p-5 md:p-7 max-w-md w-full border border-hubOrange/40 shadow-neon-orange max-h-[80vh] overflow-y-auto"
             >
               <div className="flex items-center gap-2 mb-4">
                 <Trophy className="w-5 h-5 text-hubOrange" />
@@ -535,12 +615,13 @@ function BatteryGlyph({ color }) {
   );
 }
 
-function NeonInput({ placeholder, value, onChange, type = 'text', testId }) {
+function NeonInput({ placeholder, value, onChange, type = 'text', testId, required }) {
   return (
     <input
       type={type}
       placeholder={placeholder}
       value={value}
+      required={required}
       onChange={(e) => onChange(e.target.value)}
       data-testid={testId}
       className="w-full px-3 py-2 rounded-md bg-white/[0.04] border border-cyanElectric/30 text-foreground placeholder:text-foreground/40 font-mono text-xs focus:outline-none focus:border-cyanElectric focus:shadow-neon-cyan transition-all"

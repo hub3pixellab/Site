@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useRegistration } from '@/components/layout/RegistrationProvider';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const COLORS = {
@@ -198,7 +199,8 @@ function makeExplosion(x, y, color) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function CyberGalaga({ onGameOver, onSubmitLead, leaderboard = [] }) {
+export default function CyberGalaga({ onGameOver, leaderboard = [] }) {
+  const { isRegistered, registration, registerLead } = useRegistration();
   const canvasRef = useRef(null);
   const stateRef = useRef(null);
   const rafRef = useRef(null);
@@ -355,25 +357,28 @@ export default function CyberGalaga({ onGameOver, onSubmitLead, leaderboard = []
     if (!leadForm.phone.trim()) { setFormError('Telefone é obrigatório.'); return; }
     setSubmitting(true);
     try {
-      if (onSubmitLead) {
-        await onSubmitLead({ ...leadForm, score: uiScore });
-      } else {
-        const res = await fetch('/api/arcade/lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...leadForm, score: uiScore }),
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Falha ao enviar');
-        }
-      }
+      await registerLead({ ...leadForm, score: uiScore, game: 'cyber-galaga' });
       setSubmitted(true);
     } catch (err) {
       setFormError(err?.message || 'Erro de rede. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const logExistingScore = async () => {
+    if (!registration) return;
+    setSubmitting(true);
+    try {
+      await registerLead({
+        nickname: registration.nickname,
+        email: registration.email,
+        phone: registration.phone,
+        score: uiScore, game: 'cyber-galaga',
+      });
+      setSubmitted(true);
+    } catch (err) { setFormError(err?.message || 'Falha'); }
+    finally { setSubmitting(false); }
   };
 
   useEffect(() => {
@@ -434,29 +439,46 @@ export default function CyberGalaga({ onGameOver, onSubmitLead, leaderboard = []
             SCORE: {String(uiScore).padStart(6, '0')}
           </GlowText>
           {!submitted ? (
-            <>
-              <GlowText color={COLORS.orange} size={11} style={{ marginTop: 14, marginBottom: 6 }}>
-                Insira seus dados para o leaderboard
-              </GlowText>
-              <form
-                onSubmit={handleLeadSubmit}
-                style={{ display: 'flex', flexDirection: 'column', gap: 7, width: '100%', maxWidth: 280 }}
-              >
-                <NeonInput placeholder="NICKNAME" value={leadForm.nickname} onChange={(v) => setLeadForm((f) => ({ ...f, nickname: v }))} testId="cg-nickname" />
-                <NeonInput placeholder="EMAIL" type="email" value={leadForm.email} onChange={(v) => setLeadForm((f) => ({ ...f, email: v }))} testId="cg-email" />
-                <NeonInput placeholder="WHATSAPP (+55...)" value={leadForm.phone} onChange={(v) => setLeadForm((f) => ({ ...f, phone: v }))} testId="cg-phone" />
-                {formError && <span style={{ color: COLORS.magenta, fontSize: 11, textAlign: 'center' }}>{formError}</span>}
-                <StartButton type="submit" disabled={submitting} testId="cg-submit">
-                  {submitting ? 'ENVIANDO...' : 'SUBMETER SCORE'}
+            !isRegistered ? (
+              <>
+                <div style={{
+                  marginTop: 12, padding: '8px 14px', border: `1px solid ${COLORS.orange}55`,
+                  background: `${COLORS.orange}10`, borderRadius: 6, maxWidth: 280, textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 10, color: COLORS.orange, letterSpacing: 2 }}>🔒 CADASTRO OBRIGATÓRIO</div>
+                  <div style={{ fontSize: 11, color: `${COLORS.white}aa`, marginTop: 4 }}>
+                    Cadastre-se grátis e tenha acesso livre a todos os jogos.
+                  </div>
+                </div>
+                <form
+                  onSubmit={handleLeadSubmit}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 7, width: '100%', maxWidth: 280, marginTop: 8 }}
+                >
+                  <NeonInput placeholder="NICKNAME *" value={leadForm.nickname} onChange={(v) => setLeadForm((f) => ({ ...f, nickname: v }))} testId="cg-nickname" required />
+                  <NeonInput placeholder="EMAIL *" type="email" value={leadForm.email} onChange={(v) => setLeadForm((f) => ({ ...f, email: v }))} testId="cg-email" required />
+                  <NeonInput placeholder="WHATSAPP (+55...) *" value={leadForm.phone} onChange={(v) => setLeadForm((f) => ({ ...f, phone: v }))} testId="cg-phone" required />
+                  {formError && <span style={{ color: COLORS.magenta, fontSize: 11, textAlign: 'center' }}>{formError}</span>}
+                  <StartButton type="submit" disabled={submitting} testId="cg-submit">
+                    {submitting ? 'ENVIANDO...' : 'CADASTRAR'}
+                  </StartButton>
+                </form>
+              </>
+            ) : (
+              <>
+                <GlowText color={COLORS.acidGreen} size={12} style={{ marginTop: 12 }}>
+                  Olá, {registration?.nickname?.toUpperCase()}
+                </GlowText>
+                <StartButton onClick={logExistingScore} disabled={submitting} testId="cg-log-score">
+                  {submitting ? 'ENVIANDO...' : 'REGISTRAR SCORE'}
                 </StartButton>
-              </form>
-              <button
-                onClick={startGame}
-                style={{ marginTop: 8, background: 'none', border: 'none', color: `${COLORS.white}66`, fontSize: 11, cursor: 'pointer', letterSpacing: 1 }}
-              >
-                pular → jogar de novo
-              </button>
-            </>
+                <button
+                  onClick={startGame}
+                  style={{ marginTop: 8, background: 'none', border: 'none', color: `${COLORS.white}66`, fontSize: 11, cursor: 'pointer', letterSpacing: 1 }}
+                >
+                  pular → jogar de novo
+                </button>
+              </>
+            )
           ) : (
             <>
               <GlowText color={COLORS.cyan} size={14} style={{ marginTop: 16 }}>✓ Score registrado!</GlowText>
@@ -510,10 +532,10 @@ function StartButton({ children, onClick, type = 'button', disabled, style, test
   );
 }
 
-function NeonInput({ placeholder, value, onChange, type = 'text', testId }) {
+function NeonInput({ placeholder, value, onChange, type = 'text', testId, required }) {
   return (
     <input
-      type={type} placeholder={placeholder} value={value}
+      type={type} placeholder={placeholder} value={value} required={required}
       data-testid={testId}
       onChange={(e) => onChange(e.target.value)}
       style={{

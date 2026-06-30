@@ -1,55 +1,29 @@
 # HUB3 Lab — Site (Next.js + Sanity)
 
-## Original Problem Statement
-Site corporativo da HUB3 PixelLab com deploy no Vercel + Sanity.
+## Iter. 5 — Score progressivo + cadastro obrigatório + 2ª cabine (30 Jun)
+- ✅ **PixelMatch nova progressão** (tabela fixa, matematicamente possível):
+  - L1: 320 / 20 moves · L2: 640 / 25 · L3: 1280 / 32 · L4: 2520 / 42
+  - L5–L25: cresce gradualmente até L25 = 70.000 pts / 175 moves
+  - Score **reseta a cada nível** + acumula em `totalScore` para ranking
+- ✅ **Cadastro obrigatório (lead)** no fim do Nível 1 do PixelMatch — forma de acesso à plataforma. Após cadastro = **acesso livre** a todos os jogos (sem necessidade de novo form).
+- ✅ Novo `RegistrationProvider` (Context + localStorage `hub3_registration_v1`) compartilhado entre todos os jogos.
+- ✅ **CyberGalaga** e **MemorySequence** integrados ao `useRegistration`: usuário não registrado → form obrigatório; já registrado → botão "Registrar Score" direto.
+- ✅ **Nova cabine `MemorySequence`** (DJ Challenge — Simon Says com 4 drum pads + Web Audio sintetizado: kick/snare/hi-hat/synth) adicionada ao Fliperama.
+- ✅ Fliperama com **seletor de cabines** (CyberGalaga / Memory Sequence) + sidebar de Records contextual.
+- ✅ Banner "Acesso livre" no header do Fliperama quando o usuário está registrado.
+- ✅ Build prod: 10 rotas, OK.
 
-## Iterações
-### Iter. 1 — Deploy readiness (29 Jun)
-- `.gitignore`, `.env.example`, `vercel.json`, `README.md`, `next.config.js` saneado, `.npmrc` legacy-peer-deps.
-
-### Iter. 2 — Identidade + Equipe + jogo match-3 (29 Jun)
-- Paleta do logo aplicada (navy/cyan/laranja)
-- Página `/equipe` (Diogo + Bruno)
-- `PixelMatch` substitui TerminalNode
-- Holding limpa de seção founders
-- i18n pt/en
-
-### Iter. 3 — Estrutura no GitHub corrigida (29 Jun)
-- Arquivos movidos de `/app/site/*` para `/app/*` (root correto)
-- Save to GitHub agora sincroniza com Vercel
-
-### Iter. 4 — Fliperama + 25 níveis + leads + mobile menu (29 Jun)
-- ✅ Logo principal **removido** da home
-- ✅ `PixelMatch` ampliado para **25 níveis** com progressão (alvo 240→2160, moves 18→54)
-- ✅ Logo HUB3 incluído como **7ª peça** do jogo
-- ✅ Modal de **vitória/derrota** com captação de lead (POST `/api/arcade/lead`)
-- ✅ Modal de **Leaderboard top 10** (GET `/api/arcade/leaderboard`)
-- ✅ Menus **mobile**: hamburger com dropdown
-- ✅ Nova página `/fliperama` com cabine **CyberGalaga** (shoot'em up)
-- ✅ Sidebar de **Livro de Records** no fliperama
-- ✅ **Footer** com `© 2026 HUB3 PIXEL LAB` + Instagram `@hub3pixellab`
-- ✅ Página `/contato`: botões Instagram + email
-- ✅ Skills da equipe re-atribuídas:
-  - **Diogo Zachi**: REGEN/Liderança Regenerativa + **Smart Contracts** + **Tokenomics** + MBA + Produtor Musical
-  - **Bruno Xavier**: Computação Gráfica + **Artes Gráficas** + **Controle de Planilhas** + **Relatórios Inteligentes** + Auditoria Financeira
-- ✅ Build prod: 10 rotas estáticas/edge, OK
-
-## Environment Variables (Vercel)
-- `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, `NEXT_PUBLIC_SANITY_API_VERSION`, `SANITY_WRITE_TOKEN`, `CORS_ORIGINS` (opcional)
-
-## APIs ativas
-- `POST /api/arcade/lead` — captura lead + atualiza highscore por nickname (Sanity)
+## API ativa
+- `POST /api/arcade/lead` — registra/atualiza lead + highscore por nickname (Sanity)
 - `GET /api/arcade/leaderboard` — top 10 (revalidate 10s)
-- `GET /api/matchmaker/questions` — perguntas Sanity
 
 ## Next Action Items (usuário)
-1. **Save to GitHub** novamente
-2. Aguardar Vercel rebuildar (~2-3 min)
-3. Confirmar Sanity vars no Vercel
-4. Testar fliperama e leaderboard
+1. **Save to GitHub** novamente — novos arquivos: `RegistrationProvider.js`, `MemorySequence.js`. Modificados: `PixelMatch.js`, `CyberGalaga.js`, `fliperama/page.js`, `providers.js`, `i18n-dict.js`.
+2. Vercel rebuilda em ~2 min após push.
+3. Confirme `SANITY_WRITE_TOKEN` no Vercel para persistir leads.
 
 ## Backlog
-- Mais cabines no fliperama (Tetris, Asteroids)
+- Mais cabines (Tetris, Asteroids)
+- Ranking por jogo (atualmente compartilha)
 - Foto real dos founders
-- Som no PixelMatch via AudioEngine
-- Ranking por jogo (atualmente compartilha o mesmo leaderboard global)
+- Webhook Sanity → revalidação automática
