@@ -1,51 +1,55 @@
 # HUB3 Lab — Site (Next.js + Sanity)
 
 ## Original Problem Statement
-Analisar o repositório `hub3pixellab/Site` e corrigir o que falta para deploy no Vercel + Sanity.
-**Iteração 2:** Criar página `/equipe` (Diogo Zachi + Bruno Xavier), remover seção de fundadores do Matchmaker (holding), substituir o jogo da home por match-3 estilo Candy Crush, aplicar paleta do logo (navy + cyan + laranja), incluir o logo na home.
+Site corporativo da HUB3 PixelLab com deploy no Vercel + Sanity.
 
-## Architecture
-- **Framework:** Next.js 15.5.16 (App Router)
-- **CMS:** Sanity v3 (Studio embarcado em `/studio`)
-- **Runtime:** Edge (API routes)
-- **Deploy target:** Vercel
-- **Code location:** `/app/site`
+## Iterações
+### Iter. 1 — Deploy readiness (29 Jun)
+- `.gitignore`, `.env.example`, `vercel.json`, `README.md`, `next.config.js` saneado, `.npmrc` legacy-peer-deps.
 
-## What's been implemented
+### Iter. 2 — Identidade + Equipe + jogo match-3 (29 Jun)
+- Paleta do logo aplicada (navy/cyan/laranja)
+- Página `/equipe` (Diogo + Bruno)
+- `PixelMatch` substitui TerminalNode
+- Holding limpa de seção founders
+- i18n pt/en
 
-### Iter. 1 — Deploy readiness (29 Jun 2025)
-- ✅ `.gitignore`, `.env.example`, `vercel.json`, `README.md`
-- ✅ `next.config.js` saneado para Vercel
-- ✅ Build de produção validado
+### Iter. 3 — Estrutura no GitHub corrigida (29 Jun)
+- Arquivos movidos de `/app/site/*` para `/app/*` (root correto)
+- Save to GitHub agora sincroniza com Vercel
 
-### Iter. 2 — Identidade + Equipe + Novo jogo (29 Jun 2025)
-- ✅ **Paleta do logo** aplicada: navy `#06121F`, cyan `#22E0F5`, laranja `#FF9416` (tailwind + globals.css)
-- ✅ **Logo** adicionado: `/public/logo-hub3.jpg` (renderizado na home + miniatura no nav)
-- ✅ **Jogo match-3 PixelMatch** (`components/games/PixelMatch.js`): 6x6, swap por clique adjacente, cascata, 6 ícones tech, score 240 desbloqueia o hub. Substitui o `TerminalNode` na home.
-- ✅ **Página `/equipe`** com cards dos 2 fundadores (Diogo Zachi + Bruno Xavier), quotes, bios completas, tags coloridas por accent.
-- ✅ **Holding limpa**: removida seção de fundadores; link "Conheça os fundadores" → `/equipe`.
-- ✅ **Nav atualizado**: logo + link "Equipe" entre Home e Holding.
-- ✅ **i18n**: novos strings pt/en (`equipe.*`, `home.team`, `home.boot/instruction` atualizados).
-- ✅ Build prod ✓ — 9 rotas geradas, incl. `/equipe`.
-- ✅ Smoke tests: `/`, `/equipe`, `/holding` → 200.
-- ✅ Visual validado por screenshot.
+### Iter. 4 — Fliperama + 25 níveis + leads + mobile menu (29 Jun)
+- ✅ Logo principal **removido** da home
+- ✅ `PixelMatch` ampliado para **25 níveis** com progressão (alvo 240→2160, moves 18→54)
+- ✅ Logo HUB3 incluído como **7ª peça** do jogo
+- ✅ Modal de **vitória/derrota** com captação de lead (POST `/api/arcade/lead`)
+- ✅ Modal de **Leaderboard top 10** (GET `/api/arcade/leaderboard`)
+- ✅ Menus **mobile**: hamburger com dropdown
+- ✅ Nova página `/fliperama` com cabine **CyberGalaga** (shoot'em up)
+- ✅ Sidebar de **Livro de Records** no fliperama
+- ✅ **Footer** com `© 2026 HUB3 PIXEL LAB` + Instagram `@hub3pixellab`
+- ✅ Página `/contato`: botões Instagram + email
+- ✅ Skills da equipe re-atribuídas:
+  - **Diogo Zachi**: REGEN/Liderança Regenerativa + **Smart Contracts** + **Tokenomics** + MBA + Produtor Musical
+  - **Bruno Xavier**: Computação Gráfica + **Artes Gráficas** + **Controle de Planilhas** + **Relatórios Inteligentes** + Auditoria Financeira
+- ✅ Build prod: 10 rotas estáticas/edge, OK
 
 ## Environment Variables (Vercel)
-- `NEXT_PUBLIC_SANITY_PROJECT_ID` · `NEXT_PUBLIC_SANITY_DATASET=production`
-- `NEXT_PUBLIC_SANITY_API_VERSION=2024-01-01` · `SANITY_WRITE_TOKEN`
-- `CORS_ORIGINS` (opcional)
+- `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`, `NEXT_PUBLIC_SANITY_API_VERSION`, `SANITY_WRITE_TOKEN`, `CORS_ORIGINS` (opcional)
+
+## APIs ativas
+- `POST /api/arcade/lead` — captura lead + atualiza highscore por nickname (Sanity)
+- `GET /api/arcade/leaderboard` — top 10 (revalidate 10s)
+- `GET /api/matchmaker/questions` — perguntas Sanity
 
 ## Next Action Items (usuário)
-1. **Save to GitHub** para enviar 8 arquivos modificados + 7 novos
-2. Adicionar fotos reais dos fundadores em `/public/team/diogo.jpg` e `/public/team/bruno.jpg` e setar `avatar` em `lib/content.js`
-3. Deploy no Vercel (instruções no README.md)
+1. **Save to GitHub** novamente
+2. Aguardar Vercel rebuildar (~2-3 min)
+3. Confirmar Sanity vars no Vercel
+4. Testar fliperama e leaderboard
 
 ## Backlog
-- Foto real dos fundadores
-- Adicionar mais membros do time (já tem estrutura pronta em `team`)
-- Hover/tilt 3D nos cards de equipe
-- Sound effects no PixelMatch (já existe AudioEngine)
-- Botão "Share score" no fim do jogo match-3
-- Resolver peer-deps `next-sanity@10 ↔ sanity@3`
-- Remover dep `mongodb` (não usada)
-- Otimizar bundle do `/studio` (1.55 MB)
+- Mais cabines no fliperama (Tetris, Asteroids)
+- Foto real dos founders
+- Som no PixelMatch via AudioEngine
+- Ranking por jogo (atualmente compartilha o mesmo leaderboard global)

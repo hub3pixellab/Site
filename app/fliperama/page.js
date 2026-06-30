@@ -1,0 +1,126 @@
+'use client';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Gamepad2, Trophy, Cpu, ChevronRight } from 'lucide-react';
+import GameContainer from '@/components/ui/GameContainer';
+import CyberGalaga from '@/components/games/CyberGalaga';
+import { useI18n } from '@/components/i18n/I18nProvider';
+import { useArcadeData } from '@/hooks/useArcadeData';
+
+export default function FliperamaPage() {
+  const { t } = useI18n();
+  const { submitLead, leaderboard, leaderboardLoading } = useArcadeData();
+  const [activeGame, setActiveGame] = useState('cybergalaga');
+
+  return (
+    <GameContainer>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-4xl mx-auto text-center mb-8 relative"
+      >
+        <div className="absolute inset-0 -z-10 bg-radial-cyan opacity-40 pointer-events-none" />
+        <div className="inline-flex items-center gap-2 glass rounded-full px-3 py-1 font-mono text-[10px] tracking-widest text-cyanElectric mb-3">
+          <Gamepad2 className="h-3 w-3" />
+          {t('fliperama.tag')}
+        </div>
+        <h1 className="font-display text-3xl md:text-5xl gradient-text">{t('fliperama.title')}</h1>
+        <p className="mt-3 font-mono text-xs md:text-sm text-cyanElectric/90 tracking-widest">{t('fliperama.subtitle')}</p>
+        <p className="mt-3 text-foreground/70 max-w-2xl mx-auto text-sm md:text-base">{t('fliperama.intro')}</p>
+      </motion.div>
+
+      {/* Cabine seletor */}
+      <div className="max-w-4xl mx-auto mb-6 flex flex-wrap items-center justify-center gap-2">
+        <CabineCard
+          active={activeGame === 'cybergalaga'}
+          onClick={() => setActiveGame('cybergalaga')}
+          icon={<Cpu className="w-4 h-4" />}
+          name="CYBER GALAGA"
+          tag="SHOOT'EM UP"
+          accent="#22E0F5"
+          testId="cabine-cybergalaga"
+        />
+        <CabineCard
+          active={false}
+          disabled
+          icon={<Gamepad2 className="w-4 h-4" />}
+          name="???"
+          tag={t('fliperama.soon')}
+          accent="#FF9416"
+        />
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_280px] gap-6 max-w-5xl mx-auto">
+        <div>
+          <CyberGalaga onSubmitLead={submitLead} leaderboard={leaderboard} />
+        </div>
+
+        <aside className="glass rounded-2xl p-4 border border-hubOrange/30 self-start" data-testid="leaderboard-sidebar">
+          <div className="flex items-center gap-2 mb-3">
+            <Trophy className="w-4 h-4 text-hubOrange" />
+            <h3 className="font-display text-sm text-hubOrange tracking-wider">LIVRO DE RECORDS</h3>
+          </div>
+          <div className="font-mono text-[9px] tracking-widest text-foreground/40 mb-3">TOP 10 · ATUALIZA A CADA 30s</div>
+
+          {leaderboardLoading ? (
+            <div className="text-center text-foreground/50 font-mono text-xs py-4">Carregando...</div>
+          ) : leaderboard.length === 0 ? (
+            <div className="text-center text-foreground/50 font-mono text-xs py-4">
+              Nenhum record ainda.<br />Seja o primeiro a entrar.
+            </div>
+          ) : (
+            <ol className="space-y-1.5">
+              {leaderboard.map((entry, idx) => (
+                <li
+                  key={entry._id || idx}
+                  className="flex items-center justify-between bg-white/[0.02] rounded-md px-2.5 py-1.5 font-mono text-xs"
+                  data-testid={`fliperama-row-${idx}`}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="w-5 text-hubOrange font-bold text-[11px]">{idx + 1}.</span>
+                    <span className="text-foreground/90 truncate">{entry.nickname}</span>
+                  </span>
+                  <span className="text-cyanElectric font-bold">{entry.score}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          <div className="mt-4 pt-3 border-t border-cyanElectric/10">
+            <div className="font-mono text-[10px] text-foreground/55 tracking-wider mb-2 inline-flex items-center gap-1">
+              <ChevronRight className="w-3 h-3 text-cyanElectric" /> DICA
+            </div>
+            <p className="text-[11px] text-foreground/70 leading-relaxed">
+              Inimigos da fileira de cima (hexágonos) valem <span className="text-hubOrange font-bold">50pts</span> e multiplicam pela wave atual. Sobreviva mais ondas pra subir no ranking.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </GameContainer>
+  );
+}
+
+function CabineCard({ active, disabled, onClick, icon, name, tag, accent, testId }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      data-testid={testId}
+      className={`group inline-flex items-center gap-3 px-4 py-2.5 rounded-lg font-mono text-xs tracking-widest transition-all ${
+        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02]'
+      }`}
+      style={{
+        background: active ? `${accent}15` : 'rgba(255,255,255,0.02)',
+        border: `1.5px solid ${active ? accent : 'rgba(34,224,245,0.15)'}`,
+        boxShadow: active ? `0 0 16px ${accent}44` : 'none',
+        color: active ? accent : 'rgba(232,244,255,0.7)',
+      }}
+    >
+      <span style={{ color: accent }}>{icon}</span>
+      <span className="flex flex-col items-start">
+        <span className="font-display text-sm tracking-wider">{name}</span>
+        <span className="text-[9px] opacity-70">{tag}</span>
+      </span>
+    </button>
+  );
+}
