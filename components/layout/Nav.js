@@ -2,15 +2,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Menu, X } from 'lucide-react';
+import { Lock, Menu, X, Trophy } from 'lucide-react';
 import { useUnlock } from '@/components/layout/UnlockProvider';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import LangSwitch from '@/components/i18n/LangSwitch';
 
 export default function Nav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { unlocked } = useUnlock();
   const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -23,6 +24,15 @@ export default function Nav() {
     { href: '/fliperama', label: t('nav.fliperama') },
     { href: '/contato', label: t('nav.contato') },
   ];
+
+  const openRecords = () => {
+    if (pathname === '/fliperama') {
+      window.dispatchEvent(new CustomEvent('hub3:open-records'));
+    } else {
+      router.push('/fliperama?records=1');
+    }
+    setMobileOpen(false);
+  };
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 px-3 md:px-4 py-3">
@@ -67,6 +77,14 @@ export default function Nav() {
                     </Link>
                   );
                 })}
+                <button
+                  onClick={openRecords}
+                  data-testid="nav-records-btn"
+                  className="ml-1 px-3 py-1.5 rounded-md transition-all inline-flex items-center gap-1.5 border border-hubOrange/40 text-hubOrange hover:bg-hubOrange/10 hover:shadow-neon-orange font-bold tracking-widest"
+                >
+                  <Trophy className="w-3.5 h-3.5" />
+                  RECORDS
+                </button>
               </motion.nav>
             ) : (
               <motion.div
@@ -125,6 +143,13 @@ export default function Nav() {
                 </Link>
               );
             })}
+            <button
+              onClick={openRecords}
+              data-testid="mobile-nav-records-btn"
+              className="px-3 py-2 rounded-md font-mono text-xs tracking-widest text-hubOrange border border-hubOrange/30 hover:bg-hubOrange/10 inline-flex items-center gap-2"
+            >
+              <Trophy className="w-3.5 h-3.5" /> LIVRO DE RECORDS
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

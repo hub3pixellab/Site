@@ -1,8 +1,9 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, Trophy, Cpu, Music, Zap, Ghost, Square, Rocket, ChevronRight, X } from 'lucide-react';
+import { Gamepad2, Trophy, Cpu, Music, Zap, Ghost, Square, Rocket, Building2, Car, ChevronRight, X } from 'lucide-react';
 import GameContainer from '@/components/ui/GameContainer';
 import CyberGalaga from '@/components/games/CyberGalaga';
 import MemorySequence from '@/components/games/MemorySequence';
@@ -15,6 +16,8 @@ import { useRegistration } from '@/components/layout/RegistrationProvider';
 // Lazy load — só carrega quando o arquivo existir e for selecionado
 const Hub3tris = dynamic(() => import('@/components/games/Hub3tris').catch(() => () => <SoonPlaceholder name="HUB3TRIS" />), { ssr: false });
 const Hub3steroids = dynamic(() => import('@/components/games/Hub3steroids').catch(() => () => <SoonPlaceholder name="HUB3STEROIDS" />), { ssr: false });
+const ElevatorAction = dynamic(() => import('@/components/games/ElevatorAction').catch(() => () => <SoonPlaceholder name="ELEVATOR ACTION" />), { ssr: false });
+const Hub3duro = dynamic(() => import('@/components/games/Hub3duro').catch(() => () => <SoonPlaceholder name="HUB3DURO" />), { ssr: false });
 
 function SoonPlaceholder({ name }) {
   return (
@@ -39,14 +42,41 @@ const CABINES = [
     hint: 'Encaixe os blocos. Linhas múltiplas dão bônus. Hold (C) salva uma peça.' },
   { id: 'hub3steroids', name: 'HUB3STEROIDS', tag: 'ASTEROID FIELD', icon: Rocket, accent: '#FFB347', Component: Hub3steroids,
     hint: 'Atire nos asteroides. Cuidado com o saucer! Vida extra a cada 3 waves.' },
+  { id: 'elevator', name: 'ELEVATOR ACTION', tag: 'INTEL RETRIEVAL', icon: Building2, accent: '#9945FF', Component: ElevatorAction,
+    hint: 'Suba pelos elevadores, colete os tokens nas portas e elimine os agentes inimigos.' },
+  { id: 'hub3duro', name: 'HUB3DURO', tag: 'RACE & RUN', icon: Car, accent: '#FF6B35', Component: Hub3duro,
+    hint: 'Corra ultrapassando carros pelo dia/noite/neve. A cada dia, fase runner bonus!' },
 ];
 
 export default function FliperamaPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <FliperamaInner />
+    </React.Suspense>
+  );
+}
+
+function FliperamaInner() {
   const { t } = useI18n();
   const { leaderboard, leaderboardLoading } = useArcadeData();
   const { isRegistered, registration } = useRegistration();
+  const searchParams = useSearchParams();
   const [activeId, setActiveId] = useState('cybergalaga');
   const [recordsOpen, setRecordsOpen] = useState(false);
+
+  // Open records on ?records=1 (from Nav button on other pages)
+  useEffect(() => {
+    if (searchParams.get('records') === '1') {
+      setRecordsOpen(true);
+    }
+  }, [searchParams]);
+
+  // Listen to global event from Nav button (when already on /fliperama)
+  useEffect(() => {
+    const handler = () => setRecordsOpen(true);
+    window.addEventListener('hub3:open-records', handler);
+    return () => window.removeEventListener('hub3:open-records', handler);
+  }, []);
 
   const cabine = useMemo(() => CABINES.find((c) => c.id === activeId) || CABINES[0], [activeId]);
   const ActiveGame = cabine.Component;
@@ -73,9 +103,9 @@ export default function FliperamaPage() {
         )}
       </motion.div>
 
-      {/* Barra de cabines + botão de records */}
-      <div className="max-w-5xl mx-auto mb-6 flex items-center justify-between gap-3 flex-wrap" data-testid="cabines-bar">
-        <div className="flex flex-wrap items-center gap-2 flex-1 justify-center md:justify-start">
+      {/* Barra de cabines (records button moved to top Nav) */}
+      <div className="max-w-5xl mx-auto mb-6 flex items-center justify-center" data-testid="cabines-bar">
+        <div className="flex flex-wrap items-center gap-2 justify-center">
           {CABINES.map((c) => (
             <CabineCard
               key={c.id}
@@ -89,14 +119,6 @@ export default function FliperamaPage() {
             />
           ))}
         </div>
-        <button
-          onClick={() => setRecordsOpen(true)}
-          data-testid="open-records-btn"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-hubOrange text-hubOrange font-mono text-xs tracking-widest hover:bg-hubOrange/10 hover:shadow-neon-orange transition-all"
-        >
-          <Trophy className="w-4 h-4" />
-          LIVRO DE RECORDS
-        </button>
       </div>
 
       {/* Jogo full-width (mesma largura da home) */}

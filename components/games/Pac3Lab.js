@@ -17,7 +17,7 @@ const COLORS = {
 
 const CELL = 24, COLS = 23, ROWS = 21;
 const W = COLS * CELL, H = ROWS * CELL;
-const PAC_SPEED = 5, GHOST_SPEED = 6;
+const PAC_SPEED = 7, GHOST_SPEED = 8;
 const FRIGHTENED_DURATION = 300;
 const PELLET_PTS = 10, POWER_PTS = 50, GHOST_PTS = 200;
 
@@ -29,16 +29,16 @@ const MAZE_TEMPLATE = [
   [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
   [1,2,1,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,1,2,1],
   [1,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,1],
-  [1,1,1,1,2,1,1,1,0,1,0,0,0,1,0,1,1,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,0,0,1,4,4,4,1,0,0,0,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,1,0,0,4,4,4,0,0,1,0,1,2,1,1,1,1],
-  [0,0,0,0,2,0,0,1,4,4,4,4,4,4,4,1,0,0,2,0,0,0,0],
-  [1,1,1,1,2,1,0,1,1,1,1,1,1,1,1,1,0,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,0,0,0,0,0,0,0,0,0,0,1,2,1,1,1,1],
-  [1,1,1,1,2,1,0,1,1,1,1,1,1,1,1,1,0,1,2,1,1,1,1],
+  [1,1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,2,1,1,1,1],
+  [0,0,0,1,2,1,2,2,2,1,0,0,0,1,2,2,2,1,2,1,0,0,0],
+  [0,0,0,1,2,1,2,1,0,1,4,4,4,1,0,1,2,1,2,1,0,0,0],
+  [0,0,0,0,2,0,2,0,0,0,4,4,4,0,0,0,2,0,2,0,0,0,0],
+  [0,0,0,1,2,1,2,1,0,1,4,4,4,1,0,1,2,1,2,1,0,0,0],
+  [0,0,0,1,2,1,2,2,2,1,1,1,1,1,2,2,2,1,2,1,0,0,0],
+  [1,1,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,2,1,1,1,1],
   [1,2,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,1],
   [1,2,1,1,2,1,1,1,2,1,1,1,1,1,2,1,1,1,2,1,1,2,1],
-  [1,3,2,1,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,1,2,3,1],
+  [1,3,2,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,2,2,2,3,1],
   [1,1,2,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,2,1,1],
   [1,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,1],
   [1,2,1,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,1,1,1,2,1],
@@ -338,11 +338,15 @@ export default function Pac3Lab({ onGameOver }) {
     const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
     const frame = () => {
       const s = stateRef.current;
-      if (!s || s.phase !== 'playing') return;
+      if (!s) return;
+      // Always schedule next frame FIRST so the RAF chain survives phase transitions (levelup)
+      rafRef.current = requestAnimationFrame(frame);
+      if (s.phase === 'gameover') { cancelAnimationFrame(rafRef.current); return; }
+      if (s.phase !== 'playing') return;
       s.tick++;
       const { pac, ghosts, maze } = s;
-      const ghostSpeed = Math.max(4, GHOST_SPEED - Math.floor(s.level / 2));
-      const pacSpeed = Math.max(3, PAC_SPEED - Math.floor(s.level / 3));
+      const ghostSpeed = Math.max(6, GHOST_SPEED - Math.floor(s.level / 3));
+      const pacSpeed = Math.max(5, PAC_SPEED - Math.floor(s.level / 3));
 
       pac.moveTimer++;
       if (pac.moveTimer >= pacSpeed) {
@@ -484,8 +488,6 @@ export default function Pac3Lab({ onGameOver }) {
         ctx.fillText(`LEVEL ${s.level} CLEAR!`, W/2, H/2);
         ctx.restore();
       }
-
-      rafRef.current = requestAnimationFrame(frame);
     };
     rafRef.current = requestAnimationFrame(frame);
   }, [initState, onGameOver]);
