@@ -1,11 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, Trophy, Cpu, Music, Zap, ChevronRight } from 'lucide-react';
+import { Gamepad2, Trophy, Cpu, Music, Zap, Ghost, ChevronRight } from 'lucide-react';
 import GameContainer from '@/components/ui/GameContainer';
 import CyberGalaga from '@/components/games/CyberGalaga';
 import MemorySequence from '@/components/games/MemorySequence';
 import CriptoSnake from '@/components/games/CriptoSnake';
+import Pac3Lab from '@/components/games/Pac3Lab';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import { useArcadeData } from '@/hooks/useArcadeData';
 import { useRegistration } from '@/components/layout/RegistrationProvider';
@@ -34,6 +35,14 @@ const CABINES = [
     icon: Zap,
     accent: '#FF9416',
     Component: CriptoSnake,
+  },
+  {
+    id: 'pac3lab',
+    name: 'PAC3LAB',
+    tag: 'MAZE RUNNER',
+    icon: Ghost,
+    accent: '#FF007A',
+    Component: Pac3Lab,
   },
 ];
 
@@ -148,6 +157,7 @@ export default function FliperamaPage() {
               {cabine.id === 'cybergalaga' && 'Inimigos hexagonais valem 50pts × wave. Sobreviva mais ondas pra subir.'}
               {cabine.id === 'memory' && 'Streak de 3+ rounds dobra os pontos. Cada round adiciona +1 batida.'}
               {cabine.id === 'snake' && 'Colete tokens cripto sem bater nas paredes. Power-up ⚡ dobra os pontos. PEPE ✦ = 50pts!'}
+              {cabine.id === 'pac3lab' && 'Coma todas as pellets fugindo dos 4 fantasmas. Power Pellet faz eles fugirem (200pts × combo!).'}
             </p>
           </div>
         </aside>

@@ -383,16 +383,20 @@ export default function CyberGalaga({ onGameOver, leaderboard = [] }) {
 
   useEffect(() => {
     const canvas = canvasRef.current; const wrapper = canvas.parentElement;
+    let timeout;
     const resize = () => {
-      canvas.width = wrapper.clientWidth;
-      canvas.height = wrapper.clientHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = COLORS.bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        canvas.width = wrapper.clientWidth;
+        canvas.height = wrapper.clientHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = COLORS.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }, 60);
     };
     resize();
     const ro = new ResizeObserver(resize); ro.observe(wrapper);
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); clearTimeout(timeout); };
   }, []);
 
   return (
