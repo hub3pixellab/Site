@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, Trophy, Cpu, Music, Zap, Ghost, Square, Rocket, Building2, Car, ChevronRight, X } from 'lucide-react';
+import { Gamepad2, Trophy, Cpu, Music, Zap, Ghost, Square, Car, ChevronRight, X } from 'lucide-react';
 import GameContainer from '@/components/ui/GameContainer';
 import CyberGalaga from '@/components/games/CyberGalaga';
 import MemorySequence from '@/components/games/MemorySequence';
@@ -15,8 +15,6 @@ import { useRegistration } from '@/components/layout/RegistrationProvider';
 
 // Lazy load — só carrega quando o arquivo existir e for selecionado
 const Hub3tris = dynamic(() => import('@/components/games/Hub3tris').catch(() => () => <SoonPlaceholder name="HUB3TRIS" />), { ssr: false });
-const Hub3steroids = dynamic(() => import('@/components/games/Hub3steroids').catch(() => () => <SoonPlaceholder name="HUB3STEROIDS" />), { ssr: false });
-const ElevatorAction = dynamic(() => import('@/components/games/ElevatorAction').catch(() => () => <SoonPlaceholder name="ELEVATOR ACTION" />), { ssr: false });
 const Hub3duro = dynamic(() => import('@/components/games/Hub3duro').catch(() => () => <SoonPlaceholder name="HUB3DURO" />), { ssr: false });
 
 function SoonPlaceholder({ name }) {
@@ -40,10 +38,6 @@ const CABINES = [
     hint: 'Coma todas as pellets fugindo dos 4 fantasmas. Power Pellet = 200pts × combo.' },
   { id: 'hub3tris', name: 'HUB3TRIS', tag: 'BLOCK BUILDER', icon: Square, accent: '#7AEEFF', Component: Hub3tris,
     hint: 'Encaixe os blocos. Linhas múltiplas dão bônus. Hold (C) salva uma peça.' },
-  { id: 'hub3steroids', name: 'HUB3STEROIDS', tag: 'ASTEROID FIELD', icon: Rocket, accent: '#FFB347', Component: Hub3steroids,
-    hint: 'Atire nos asteroides. Cuidado com o saucer! Vida extra a cada 3 waves.' },
-  { id: 'elevator', name: 'ELEVATOR ACTION', tag: 'INTEL RETRIEVAL', icon: Building2, accent: '#9945FF', Component: ElevatorAction,
-    hint: 'Suba pelos elevadores, colete os tokens nas portas e elimine os agentes inimigos.' },
   { id: 'hub3duro', name: 'HUB3DURO', tag: 'RACE & RUN', icon: Car, accent: '#FF6B35', Component: Hub3duro,
     hint: 'Corra ultrapassando carros pelo dia/noite/neve. A cada dia, fase runner bonus!' },
 ];
@@ -58,11 +52,14 @@ export default function FliperamaPage() {
 
 function FliperamaInner() {
   const { t } = useI18n();
-  const { leaderboard, leaderboardLoading } = useArcadeData();
   const { isRegistered, registration } = useRegistration();
   const searchParams = useSearchParams();
   const [activeId, setActiveId] = useState('cybergalaga');
   const [recordsOpen, setRecordsOpen] = useState(false);
+  const [recordsGame, setRecordsGame] = useState('all'); // 'all' | game id
+  const { leaderboard, leaderboardLoading } = useArcadeData(
+    recordsGame === 'all' ? null : recordsGame
+  );
 
   // Open records on ?records=1 (from Nav button on other pages)
   useEffect(() => {
@@ -164,16 +161,53 @@ function FliperamaInner() {
               onClick={(e) => e.stopPropagation()}
               className="glass rounded-2xl p-6 max-w-md w-full border border-hubOrange/40 shadow-neon-orange max-h-[80vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-hubOrange" />
                   <h3 className="font-display text-lg text-hubOrange">LIVRO DE RECORDS</h3>
                 </div>
-                <button onClick={() => setRecordsOpen(false)} className="p-1 rounded-md text-foreground/60 hover:text-cyanElectric">
+                <button onClick={() => setRecordsOpen(false)} data-testid="close-records" className="p-1 rounded-md text-foreground/60 hover:text-cyanElectric">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="font-mono text-[9px] tracking-widest text-foreground/40 mb-3">TOP 10 · GERAL · ATUALIZA A CADA 30s</div>
+
+              {/* Game tabs */}
+              <div className="flex flex-wrap gap-1.5 mb-3 pb-3 border-b border-white/5" data-testid="records-tabs">
+                <button
+                  onClick={() => setRecordsGame('all')}
+                  data-testid="records-tab-all"
+                  className={`px-2.5 py-1 rounded-md font-mono text-[10px] tracking-widest transition-colors ${
+                    recordsGame === 'all'
+                      ? 'bg-hubOrange/20 text-hubOrange border border-hubOrange/50'
+                      : 'text-foreground/50 border border-white/5 hover:text-hubOrange'
+                  }`}
+                >
+                  GERAL
+                </button>
+                {CABINES.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setRecordsGame(c.id)}
+                    data-testid={`records-tab-${c.id}`}
+                    className={`px-2.5 py-1 rounded-md font-mono text-[10px] tracking-widest transition-colors border ${
+                      recordsGame === c.id
+                        ? 'text-white'
+                        : 'text-foreground/50 border-white/5 hover:text-cyanElectric'
+                    }`}
+                    style={{
+                      background: recordsGame === c.id ? `${c.accent}20` : 'transparent',
+                      borderColor: recordsGame === c.id ? `${c.accent}80` : undefined,
+                      color: recordsGame === c.id ? c.accent : undefined,
+                    }}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="font-mono text-[9px] tracking-widest text-foreground/40 mb-3">
+                TOP 10 · {recordsGame === 'all' ? 'GERAL' : (CABINES.find((c) => c.id === recordsGame)?.name || recordsGame).toUpperCase()} · ATUALIZA A CADA 30s
+              </div>
               {leaderboardLoading ? (
                 <div className="text-center text-foreground/50 font-mono text-xs py-8">Carregando...</div>
               ) : leaderboard.length === 0 ? (
@@ -191,6 +225,11 @@ function FliperamaInner() {
                       <span className="flex items-center gap-2 min-w-0">
                         <span className="w-6 text-hubOrange font-bold">{idx + 1}.</span>
                         <span className="text-foreground/90 truncate">{entry.nickname}</span>
+                        {entry.game && recordsGame === 'all' && (
+                          <span className="text-[8px] tracking-widest px-1.5 py-0.5 rounded bg-white/5 text-foreground/40 uppercase">
+                            {entry.game}
+                          </span>
+                        )}
                       </span>
                       <span className="text-cyanElectric font-bold">{entry.score}</span>
                     </li>

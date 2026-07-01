@@ -22,17 +22,21 @@ const fetcher = async (url) => {
  * - submitLead(payload): persiste/atualiza lead via /api/arcade/lead
  * - leaderboard: top 10 via /api/arcade/leaderboard (SWR + revalidate)
  */
-export function useArcadeData() {
+export function useArcadeData(game = null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastResponse, setLastResponse] = useState(null);
+
+  const url = game
+    ? `/api/arcade/leaderboard?game=${encodeURIComponent(game)}`
+    : '/api/arcade/leaderboard';
 
   const {
     data: lbData,
     error: lbError,
     isLoading: lbLoading,
     mutate: refreshLeaderboard,
-  } = useSWR('/api/arcade/leaderboard', fetcher, {
+  } = useSWR(url, fetcher, {
     refreshInterval: 30_000,
     revalidateOnFocus: false,
   });

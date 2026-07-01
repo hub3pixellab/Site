@@ -1,30 +1,34 @@
 # HUB3 Lab — Site (Next.js + Sanity)
 
-## Iter. 7 — Records no top nav + Pac3Lab fix + ElevatorAction (30 Jun)
-- ✅ **Pac3Lab bug fix (P0)**: RAF chain morria após "LEVEL 1 CLEAR" porque `if (phase !== 'playing') return` ocorria ANTES de `requestAnimationFrame` ser agendado. Movido o RAF pro topo da função frame. Verificado por testing agent: tick counter incrementou +182 em 1.5s após transição L1→L2.
-- ✅ **Pac3Lab mais lento**: PAC_SPEED 5→7, GHOST_SPEED 6→8 (frames/move).
-- ✅ **Pac3Lab mapa tradicional**: redesenhado 23×21 simétrico com ghost house centrada (rows 9-11 cols 10-12), tunnel no row 10 com wraparound, 4 power pellets nos cantos.
-- ✅ **Top Nav: botão RECORDS** — dispara modal global de Livro de Records via custom event `hub3:open-records` (na /fliperama) ou navega para `/fliperama?records=1` (em outras páginas). Funciona em desktop e mobile.
-- ✅ **ElevatorAction.js** completo: 8 andares, 3 shafts de elevador, intel tokens nas portas (BTC/ETH/SOL/PEPE/BNB), inimigos com alerta, swipe touch, qualify 500pts → form de lead.
-- ✅ **Hub3duro** stub criado (código completo veio truncado — usuário deve reenviar a partir do Header).
-- ✅ Build prod OK (`/fliperama` 24.9kB).
+## Iter. 8 — Hub3duro completo + Score por jogo + Cleanup (1 Jul)
+- ✅ **Hub3duro** populado: modo Enduro (corrida com dia/noite/neve/blizzard, ultrapassagens) + Runner Bonus (endless runner com jump/duck e coleta de cripto BTC/ETH/PEPE). Transição automática Enduro↔Runner ao completar cada dia.
+- ✅ **Score separado por jogo (P0)**:
+  - Backend: `POST /api/arcade/lead` recebe `game` no body e usa (nickname, game) como chave composta — cada jogo tem seu próprio highscore por nickname.
+  - Backend: `GET /api/arcade/leaderboard?game=xxx` filtra por jogo. Sem query = geral.
+  - Query nova `topLeadsByGameQuery` + `findLeadByNicknameAndGameQuery` (via `game` field no schema Sanity).
+  - Hook: `useArcadeData(game)` aceita parâmetro opcional.
+  - Modal: 7 tabs (Geral + Cyber Galaga + Memory + CriptoSnake + Pac3Lab + Hub3tris + Hub3duro).
+- ✅ **Removidos**: Hub3steroids (asteroid) e ElevatorAction do arcade + arquivos deletados.
+- ✅ Build prod: 6 cabines ativas, /fliperama 24.6kB.
 
-## Iter. 6 anterior — Hub3tris + Hub3steroids + Matchmaker Tinder
-- Tetris/Asteroids completos, Matchmaker estilo Tinder com botões X/Heart.
+## Iter. 7 anterior — Pac3Lab fix + Records nav + ElevatorAction
+- Bug Pac3Lab L1→L2 corrigido (RAF chain).
 
-## API ativa
-- `POST /api/arcade/lead` — registra lead + highscore (Sanity)
-- `GET /api/arcade/leaderboard` — top 10 (revalidate 10s)
+## API atualizada
+- `POST /api/arcade/lead` — Body: `{ nickname, email, phone, score, game }`. Retorna 200 com highscore preservado por (nickname, game).
+- `GET /api/arcade/leaderboard[?game=xxx]` — Top 10, filtrável.
+
+## ⚠️ Ação necessária no Sanity (usuário)
+Adicionar campo `game` (tipo `string`) no schema `lead` do Sanity Studio. Registros existentes sem esse campo aparecerão apenas na aba GERAL. Novos scores serão salvos com game filtrado.
 
 ## Next Action Items (usuário)
-1. **Save to GitHub** — modificados: `Pac3Lab.js`, `Nav.js`, `app/fliperama/page.js`. Novos: `ElevatorAction.js`, `Hub3duro.js` (stub).
-2. Reenviar código completo do **Hub3duro** (a parte truncada — header em diante) para popular a cabine.
-3. Aguarde Vercel rebuild (~2min). Pac-Man passará do level 1 sem congelar.
+1. **Save to GitHub** — modificados: `fliperama/page.js`, `hooks/useArcadeData.js`, `lib/queries.js`, api routes. Novos: `Hub3duro.js` completo. Deletados: `Hub3steroids.js`, `ElevatorAction.js`.
+2. **Sanity Studio**: adicionar campo `game` (string) no schema `lead`.
+3. Aguarde Vercel rebuild (~2min).
 
 ## Backlog
-- Hub3duro código completo
-- Ranking por jogo (atualmente compartilhado)
+- Ranking com timestamp visível
 - Foto real dos founders
 - Webhook Sanity → revalidação automática
-- SFX/música nos jogos novos
-- Splitting Pac3Lab.js (724 linhas) em módulos: maze render, ghost AI, particles
+- SFX/música nos jogos
+- Splitting Pac3Lab.js (724 linhas) em módulos

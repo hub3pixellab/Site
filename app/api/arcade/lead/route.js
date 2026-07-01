@@ -5,23 +5,24 @@ import {
   sanityWriteClient,
   isSanityConfigured,
 } from '@/lib/sanity.client';
-import { findLeadByNicknameQuery } from '@/lib/queries';
+import { findLeadByNicknameAndGameQuery } from '@/lib/queries';
 
 export const runtime = 'edge';
 
 /**
  * POST /api/arcade/lead
- * Body: { nickname, email, phone, score }
+ * Body: { nickname, email, phone, score, game }
  *
- * • Cria lead se nickname inexistente.
- * • Atualiza score apenas se novo score > existente.
- * • Mantém sempre o highscore por nickname.
+ * • Score é único por (nickname, game). Cada jogo tem seu próprio highscore.
+ * • Cria lead se (nickname, game) inexistente.
+ * • Atualiza score apenas se novo > existente.
  */
 export async function POST(req) {
   try {
     const body = await req.json().catch(() => ({}));
     const { nickname, email, phone } = body || {};
     const score = Number(body?.score);
+    const game = (body?.game && typeof body.game === 'string') ? body.game : 'general';
 
     if (!nickname || typeof nickname !== 'string') {
       return NextResponse.json(
@@ -49,22 +50,20 @@ export async function POST(req) {
     }
 
     if (!isSanityConfigured || !sanityReadClient || !sanityWriteClient) {
-      // Modo "desligado" — retorna 200 sem persistir.
       return NextResponse.json(
         {
           ok: true,
           configured: false,
-          message:
-            'Sanity is not configured yet. Lead accepted in-memory only.',
-          lead: { nickname, email, phone, score, timestamp: new Date().toISOString() },
+          message: 'Sanity is not configured yet. Lead accepted in-memory only.',
+          lead: { nickname, email, phone, score, game, timestamp: new Date().toISOString() },
           updated: false,
         },
         { status: 200 }
       );
     }
 
-    const existing = await sanityWriteClient.fetch(findLeadByNicknameQuery, {
-      nickname,
+    const existing = await sanityWriteClient.fetch(findLeadByNicknameAndGameQuery, {
+      nickname, game,
     });
     const now = new Date().toISOString();
 
@@ -72,10 +71,7 @@ export async function POST(req) {
       const created = await sanityWriteClient.create({
         _id: uuidv4(),
         _type: 'lead',
-        nickname,
-        email,
-        phone,
-        score,
+        nickname, email, phone, score, game,
         timestamp: now,
       });
       return NextResponse.json(
@@ -87,7 +83,7 @@ export async function POST(req) {
     if (score > (existing.score || 0)) {
       const patched = await sanityWriteClient
         .patch(existing._id)
-        .set({ score, timestamp: now, email, phone })
+        .set({ score, timestamp: now, email, phone, game })
         .commit();
       return NextResponse.json(
         { ok: true, created: false, updated: true, lead: patched },
@@ -97,9 +93,7 @@ export async function POST(req) {
 
     return NextResponse.json(
       {
-        ok: true,
-        created: false,
-        updated: false,
+        ok: true, created: false, updated: false,
         reason: 'existing score is greater or equal',
         lead: existing,
       },
