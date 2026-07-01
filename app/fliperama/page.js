@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, Trophy, Cpu, Music, Zap, Ghost, Square, Car, ChevronRight, X } from 'lucide-react';
+import { Gamepad2, Trophy, Cpu, Music, Zap, Ghost, Square, Car, Footprints, ChevronRight, X } from 'lucide-react';
 import GameContainer from '@/components/ui/GameContainer';
 import CyberGalaga from '@/components/games/CyberGalaga';
 import MemorySequence from '@/components/games/MemorySequence';
@@ -16,6 +16,7 @@ import { useRegistration } from '@/components/layout/RegistrationProvider';
 // Lazy load — só carrega quando o arquivo existir e for selecionado
 const Hub3tris = dynamic(() => import('@/components/games/Hub3tris').catch(() => () => <SoonPlaceholder name="HUB3TRIS" />), { ssr: false });
 const Hub3duro = dynamic(() => import('@/components/games/Hub3duro').catch(() => () => <SoonPlaceholder name="HUB3DURO" />), { ssr: false });
+const Hub3Runner = dynamic(() => import('@/components/games/Hub3Runner').catch(() => () => <SoonPlaceholder name="HUB3RUNNER" />), { ssr: false });
 
 function SoonPlaceholder({ name }) {
   return (
@@ -38,8 +39,10 @@ const CABINES = [
     hint: 'Coma todas as pellets fugindo dos 4 fantasmas. Power Pellet = 200pts × combo.' },
   { id: 'hub3tris', name: 'HUB3TRIS', tag: 'BLOCK BUILDER', icon: Square, accent: '#7AEEFF', Component: Hub3tris,
     hint: 'Encaixe os blocos. Linhas múltiplas dão bônus. Hold (C) salva uma peça.' },
-  { id: 'hub3duro', name: 'HUB3DURO', tag: 'RACE & RUN', icon: Car, accent: '#FF6B35', Component: Hub3duro,
-    hint: 'Corra ultrapassando carros pelo dia/noite/neve. A cada dia, fase runner bonus!' },
+  { id: 'hub3duro', name: 'HUB3DURO', tag: 'ENDURO RACE', icon: Car, accent: '#FF6B35', Component: Hub3duro,
+    hint: 'Corra ultrapassando carros pelo dia/noite/neve. 12 dias, 10 fases climáticas.' },
+  { id: 'hub3runner', name: 'HUB3RUNNER', tag: 'WEB3 ENDLESS RUNNER', icon: Footprints, accent: '#CCFF00', Component: Hub3Runner,
+    hint: 'Endless runner cyberpunk. Pule, agache, colete tokens ₿ Ξ ◎ ✦ ⚡ e sobreviva 10 stages.' },
 ];
 
 export default function FliperamaPage() {

@@ -22,6 +22,8 @@ export default function Nav() {
     { href: '/holding', label: t('nav.holding') },
     { href: '/portfolio', label: t('nav.portfolio') },
     { href: '/fliperama', label: t('nav.fliperama') },
+    { href: '/ia', label: t('nav.ia') },
+    { href: '/loja', label: t('nav.loja') },
     { href: '/contato', label: t('nav.contato') },
   ];
 
