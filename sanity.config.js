@@ -46,6 +46,13 @@ export default defineConfig({
                   .title('Whitepaper Documents')
                   .defaultOrdering([{ field: 'updatedAt', direction: 'desc' }])
               ),
+            S.listItem()
+              .title('🛍️ Produtos (Store)')
+              .child(
+                S.documentTypeList('product')
+                  .title('Store Products')
+                  .defaultOrdering([{ field: 'order', direction: 'asc' }])
+              ),
           ]),
     }),
     visionTool({ defaultApiVersion: apiVersion }),
