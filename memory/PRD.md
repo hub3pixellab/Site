@@ -32,14 +32,15 @@ HUB3 PixelLab: site institucional/portfolio + arcade + IA + loja + carreiras + w
 8. **SINCRONIZADOR** (Network Match-3 6×6, 25 moves, desbloqueia Whitepaper)
 
 ## Third-party integrations
-- **Emergent LLM Key** (Gemini 2.5 Flash) — chat streaming em /ia e /contato
-- **Resend** — mailer no-op grácil enquanto `RESEND_API_KEY` não setada
-- **Sanity CMS** — leaderboard global (dummy env em dev)
+- **Emergent LLM Key** (Gemini 2.5 Flash) — chat streaming em /ia e /contato ✅
+- **Resend** — envio real de e-mails ativado ✅ (API key: `re_C8fudqwb_6HxbTxaza2SG7rkd83yUQyWA`)
+- **Sanity CMS** — leaderboard global + schema `whitepaper` para PDF gerenciável via Studio (dummy env em dev — pending real project ID)
 - **Wallets Web3 salvos** — para próxima fase (Store):
   - EVM (Ethereum/BNB/Polygon/Arbitrum/Optimism/Linea): `0xeB60e2a71e266d0541Dc6DEdAC0f9a537611A0bc`
   - Bitcoin: `bc1qf6ufjvdqkdy7chwse7a2cwyekfh4wak0sql6qc`
   - Solana: `616Cf24b9nzBhS68xEG4nSxBzhUtts7YY3bDz4W89Xnw`
   - Tron: `THfz3Hv6CjUJhPoEBUkvgexAuXdLSujwzj`
+- **WhatsApp**: `+55 11 96643-8164` — link wa.me ativo
 
 ## API endpoints
 - `POST /api/ai/chat` — streaming Gemini (modes: chat/ideas/explain)
@@ -69,6 +70,14 @@ RESEND_API_KEY=re_...     # PENDING - user criando conta
 
 ## Changelog
 
+### 2026-02-07 (Iter 4) — Sanity Whitepaper CMS + Resend Live + WhatsApp real
+- **Sanity schema `whitepaper`**: singleton document com campos title/version/pdf(file)/coverImage/published/updatedAt — visível no Studio como "📄 Whitepaper"
+- **API `/api/whitepaper`**: rota Node.js que busca o whitepaper publicado mais recente do Sanity, constrói URL do CDN (`cdn.sanity.io/files/...`), aceita `?json=1` (retorna metadata) ou redirect direto para download
+- **Botão "Baixar .PDF"** na página `/whitepaper` agora consulta a API — se Sanity não configurado retorna 503 gracioso, se ok abre o PDF em nova aba
+- **Resend LIVE** — `RESEND_API_KEY` real setada. E-mails de careers e ideas agora chegam de verdade em hub3pixellab@gmail.com (`mailed:true` confirmado em curl)
+- **WhatsApp real** `+55 11 96643-8164` — link wa.me ativo em /contato e no chat AI
+- `isSanityConfigured` melhorado para filtrar valores dummy/placeholder
+
 ### 2026-02-07 (Iter 3) — Sincronizador + Whitepaper
 - **/fliperama**: adicionada 8ª cabine **SINCRONIZADOR** (Network Match-3 6×6, 25 moves, 6 tipos de nós ⚡ 🔌 🌐 🔋 💾 📡, cascatas com combo multiplicador, animações de swap+queda)
 - **/whitepaper**: nova página com conteúdo institucional completo (10+ seções + tabela KPIs 2026)
@@ -93,8 +102,7 @@ RESEND_API_KEY=re_...     # PENDING - user criando conta
 ## Roadmap (P0/P1/P2)
 
 ### P0 (blockers do próximo passo)
-- [ ] **RESEND_API_KEY** — user criando conta na resend.com. Sem isso, e-mails só logam (mailed:false)
-- [ ] **NEXT_PUBLIC_WHATSAPP_NUMBER** — hoje é placeholder `5511999999999`, precisa o real
+- [ ] **Sanity Studio deploy** — usuário precisa configurar `NEXT_PUBLIC_SANITY_PROJECT_ID` real + subir o primeiro PDF do Whitepaper via `/studio` para que o botão "Baixar .PDF" funcione
 
 ### P1 (próxima rodada — sugerido: Store Web3)
 - [ ] **HUB3 Store multi-chain** — implementar carrinho + MetaMask/Phantom/Coinbase/WalletConnect connectors + transações em testnet (Sepolia, Solana Devnet, BNB Testnet, Polygon Mumbai)

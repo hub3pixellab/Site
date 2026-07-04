@@ -53,6 +53,8 @@ const P_STYLE = 'text-base md:text-[15px] leading-[1.85] text-foreground/80 trac
 
 export default function WhitepaperPage() {
   const [unlocked, setUnlocked] = useState(null); // null while loading
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -62,6 +64,31 @@ export default function WhitepaperPage() {
     window.addEventListener('hub3:whitepaper-unlocked', listener);
     return () => window.removeEventListener('hub3:whitepaper-unlocked', listener);
   }, []);
+
+  const handleDownload = async () => {
+    setDownloadError('');
+    setDownloading(true);
+    try {
+      const res = await fetch('/api/whitepaper?json=1');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 503) {
+          setDownloadError('Whitepaper PDF ainda não foi publicado no CMS. Use "Imprimir/Salvar PDF" enquanto isso.');
+        } else if (res.status === 404) {
+          setDownloadError('Nenhum whitepaper publicado ainda. O time HUB3 vai subir em breve.');
+        } else {
+          setDownloadError(data.error || 'Falha ao buscar o PDF.');
+        }
+        return;
+      }
+      const data = await res.json();
+      window.open(data.url, '_blank');
+    } catch (err) {
+      setDownloadError('Falha de rede: ' + err.message);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (unlocked === null) {
     return (
@@ -155,16 +182,21 @@ export default function WhitepaperPage() {
             >
               <Printer className="w-3.5 h-3.5" /> IMPRIMIR / SALVAR PDF
             </button>
-            <a
-              href="/whitepaper.pdf"
-              download
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
               data-testid="wp-download"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs tracking-widest border transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs tracking-widest border transition-all disabled:opacity-50"
               style={{ borderColor: '#764ba288', color: '#a56cd6', background: 'rgba(118,75,162,0.08)' }}
             >
-              <Download className="w-3.5 h-3.5" /> BAIXAR .PDF
-            </a>
+              <Download className="w-3.5 h-3.5" /> {downloading ? 'BAIXANDO...' : 'BAIXAR .PDF'}
+            </button>
           </div>
+          {downloadError && (
+            <p className="mt-3 font-mono text-[11px] text-magenta/80 tracking-wide">
+              {downloadError}
+            </p>
+          )}
         </div>
 
         {/* Content sections */}

@@ -39,6 +39,13 @@ export default defineConfig({
             S.listItem()
               .title('🚀 Portfolio Projects')
               .child(S.documentTypeList('project').title('Portfolio Projects')),
+            S.listItem()
+              .title('📄 Whitepaper')
+              .child(
+                S.documentTypeList('whitepaper')
+                  .title('Whitepaper Documents')
+                  .defaultOrdering([{ field: 'updatedAt', direction: 'desc' }])
+              ),
           ]),
     }),
     visionTool({ defaultApiVersion: apiVersion }),
