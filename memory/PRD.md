@@ -70,7 +70,19 @@ RESEND_API_KEY=re_...     # PENDING - user criando conta
 
 ## Changelog
 
-### 2026-02-07 (Iter 4) — Sanity Whitepaper CMS + Resend Live + WhatsApp real
+### 2026-02-07 (Iter 5) — HUB3 Store Web3 multi-chain 🏪
+- **`/loja` refeita como Store Web3 completa** com wallet connect + cart + checkout
+- **7 chains suportadas** (testnet mode default): Ethereum Sepolia, Polygon Amoy, Arbitrum Sepolia, Optimism Sepolia, Linea Sepolia, BNB Testnet, Solana Devnet
+- **Wallets**: MetaMask (EVM) + Phantom (Solana) nativos (sem dependências extras). WalletConnect/Coinbase marcados "em breve"
+- **Sanity schema `product`** com priceByChain (7 redes) + category (software/hardware/nft/services) + priceUSD + stock + badge
+- **API `/api/store/products`**: retorna produtos do Sanity ou fallback com 6 seeds fictícios (Design System Audit, UX Consulting, HUB3 Setup Pack, Neon Wallpaper Pack, HUB3 Sticker Pack, Web3 Onboarding Workshop)
+- **API `/api/store/order`**: registra pedido no console + envia e-mail via Resend (mailed:true confirmado) com hash + link do explorer
+- **Cart persistente** via localStorage, event listener `hub3:cart-changed` para sync entre tabs
+- **Checkout flow**: assinar na wallet → hash retornado → e-mail para HUB3 + comprovante ao buyer (opcional) → modal de sucesso com link do explorer
+- **Chain switching em tempo real**: dropdown atualiza preços em todos os cards + carrinho + botão de pagamento
+- **Wallets Web3 salvas**: EVM (Sepolia/Amoy/etc) + Solana Devnet · Bitcoin/Tron salvos em env para uso futuro
+- **`@solana/web3.js`** instalado como dependência real (era dynamic import)
+- Testing agent 100% backend + 100% frontend, zero bugs críticos
 - **Sanity schema `whitepaper`**: singleton document com campos title/version/pdf(file)/coverImage/published/updatedAt — visível no Studio como "📄 Whitepaper"
 - **API `/api/whitepaper`**: rota Node.js que busca o whitepaper publicado mais recente do Sanity, constrói URL do CDN (`cdn.sanity.io/files/...`), aceita `?json=1` (retorna metadata) ou redirect direto para download
 - **Botão "Baixar .PDF"** na página `/whitepaper` agora consulta a API — se Sanity não configurado retorna 503 gracioso, se ok abre o PDF em nova aba
