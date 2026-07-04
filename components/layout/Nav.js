@@ -1,10 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Menu, X, Trophy } from 'lucide-react';
+import { Lock, Menu, X, Trophy, FileText } from 'lucide-react';
 import { useUnlock } from '@/components/layout/UnlockProvider';
 import { useI18n } from '@/components/i18n/I18nProvider';
 import LangSwitch from '@/components/i18n/LangSwitch';
@@ -15,6 +15,15 @@ export default function Nav() {
   const { unlocked } = useUnlock();
   const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [wpUnlocked, setWpUnlocked] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setWpUnlocked(localStorage.getItem('hub3.whitepaper.unlocked') === '1');
+    const listener = () => setWpUnlocked(true);
+    window.addEventListener('hub3:whitepaper-unlocked', listener);
+    return () => window.removeEventListener('hub3:whitepaper-unlocked', listener);
+  }, []);
 
   const links = [
     { href: '/', label: t('nav.home') },
@@ -24,6 +33,7 @@ export default function Nav() {
     { href: '/fliperama', label: t('nav.fliperama') },
     { href: '/ia', label: t('nav.ia') },
     { href: '/loja', label: t('nav.loja') },
+    { href: '/whitepaper', label: t('nav.whitepaper'), Icon: wpUnlocked ? FileText : Lock, dim: !wpUnlocked },
     { href: '/contato', label: t('nav.contato') },
   ];
 
@@ -64,17 +74,22 @@ export default function Nav() {
               >
                 {links.map((l) => {
                   const active = pathname === l.href;
+                  const Icon = l.Icon;
                   return (
                     <Link
                       key={l.href}
                       href={l.href}
                       data-testid={`nav-link-${l.href.replace('/', '') || 'home'}`}
-                      className={`px-3 py-1.5 rounded-md transition-all ${
+                      className={`px-3 py-1.5 rounded-md transition-all inline-flex items-center gap-1.5 ${
                         active
                           ? 'bg-cyanElectric/10 text-cyanElectric shadow-neon-cyan'
-                          : 'text-foreground/70 hover:text-cyanElectric hover:bg-cyanElectric/5'
+                          : l.dim
+                            ? 'text-foreground/35 hover:text-magenta/80 hover:bg-magenta/5'
+                            : 'text-foreground/70 hover:text-cyanElectric hover:bg-cyanElectric/5'
                       }`}
+                      title={l.dim ? 'Jogue Sincronizador para desbloquear' : undefined}
                     >
+                      {Icon && <Icon className="w-3 h-3" />}
                       {l.label.toUpperCase()}
                     </Link>
                   );
