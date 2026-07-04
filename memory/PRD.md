@@ -70,6 +70,15 @@ RESEND_API_KEY=re_...     # PENDING - user criando conta
 
 ## Changelog
 
+### 2026-02-07 (Iter 6) — Gemini-powered buyer thank-you e-mails 🤖✉️
+- **`/api/store/order` refeita** para enviar 2 e-mails após checkout: (1) notificação síncrona para o time HUB3 (como antes), (2) e-mail personalizado ao comprador gerado on-the-fly pelo Gemini
+- **Personalização do buyer e-mail**: extrai nome do e-mail, cita o produto principal, faz "micro-conexão criativa" com o item comprado, sugere 3 projetos do portfolio relacionados (algoritmo simples que compara tags), inclui próximo passo (24h úteis) e link WhatsApp
+- **PORTFOLIO_POOL** com 8 projetos exemplo — cada order gera 3 sugestões com viés de categoria + jitter random
+- **UI feedback**: modal de sucesso mostra "E-mail personalizado enviado ao comprador" (verde) ou aviso quando falha por sandbox Resend
+- **⚠️ Resend em modo sandbox**: `onboarding@resend.dev` permite enviar apenas para o dono da conta. Para ativar emails a compradores reais: user precisa verificar um domínio no resend.com e mudar `RESEND_FROM`
+- Testado end-to-end via curl: team e-mail (mailed:true) + buyer e-mail Gemini (buyerMail:sent) em 5.8s total
+- Zero regressões
+
 ### 2026-02-07 (Iter 5) — HUB3 Store Web3 multi-chain 🏪
 - **`/loja` refeita como Store Web3 completa** com wallet connect + cart + checkout
 - **7 chains suportadas** (testnet mode default): Ethereum Sepolia, Polygon Amoy, Arbitrum Sepolia, Optimism Sepolia, Linea Sepolia, BNB Testnet, Solana Devnet

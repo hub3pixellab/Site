@@ -186,6 +186,7 @@ export default function LojaPage() {
       setLastTx({
         hash: txHash, chain: chainKey,
         explorerLink: logData.explorerLink || txExplorerUrl(chainKey, txHash, MODE),
+        buyerMail: logData.buyerMail || 'skipped',
       });
       setCheckoutStatus('success');
       clearCart(); setCartState([]);
@@ -405,9 +406,21 @@ export default function LojaPage() {
                 <div className="text-center py-4">
                   <Check className="w-14 h-14 text-acidGreen mx-auto mb-4" />
                   <h3 className="font-display text-2xl text-acidGreen mb-2">Pagamento confirmado!</h3>
-                  <p className="font-mono text-xs text-foreground/60 mb-4">
+                  <p className="font-mono text-xs text-foreground/60 mb-2">
                     Transação registrada. Nossa equipe recebeu a confirmação por e-mail.
                   </p>
+                  {lastTx.buyerMail === 'sent' && (
+                    <p className="font-mono text-[11px] text-acidGreen/80 mb-4 tracking-wide">
+                      <Check className="inline w-3 h-3 mr-1" />
+                      E-mail personalizado enviado ao comprador
+                    </p>
+                  )}
+                  {lastTx.buyerMail === 'error' && (
+                    <p className="font-mono text-[10px] text-hubOrange/80 mb-4 tracking-wide leading-relaxed">
+                      * Resend em modo sandbox só envia para hub3pixellab@gmail.com.
+                      Verifique um domínio no resend.com para liberar buyer emails.
+                    </p>
+                  )}
                   <a
                     href={lastTx.explorerLink}
                     target="_blank" rel="noopener noreferrer"
